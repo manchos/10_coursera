@@ -1,6 +1,8 @@
 from lxml import etree
+import lxml
 from io import StringIO, BytesIO
-import urllib.request
+from bs4 import BeautifulSoup
+import requests
 import random
 
 
@@ -26,4 +28,16 @@ if __name__ == '__main__':
 
 
 if __name__ == '__main__':
-    print(get_courses_list())
+    # print(get_courses_list())
+
+    url ='https://www.coursera.org/learn/abdomen-anatomy'
+    headers = {'User-agent': 'Mozilla/5.0'}
+    response = requests.get(url, headers=headers)
+    print(response.status_code)  # Код ответа
+    print(response.headers) # Заголовки ответа
+    # print(response.content) # Тело ответа
+    soup = BeautifulSoup(response.text, 'lxml')
+    title = soup.select('.title .display-3-text')
+    title1 = soup.find('div', {'class': 'title display-3-text'})
+    # title = soup.find_all("div", class_="title display-3-text")
+    print(title1.text)
