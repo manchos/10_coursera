@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 from bs4 import Comment
 import requests
 import random
-import datetime
+from datetime import datetime
 from collections import namedtuple
 import re
 import sys
@@ -55,20 +55,29 @@ def get_open_repo_issues_list(repo_owner, repo_name):
     return [repo_issue for repo_issue in repo_issues_dict if 'pull_request' not in repo_issue]
 
 
-def get_course_info(course_url='https://www.coursera.org/learn/data-scientists-tools'):
+def get_course_info(course_url='https://www.coursera.org/learn/gis-capstone'):
     course_info_dict = {}
     # course_page = requests.get(course_url, headers=headers)
     # название, язык, ближайшую дату начала, количество недель и среднюю оценку.
     course_response = get_course(course_url)
     if course_response:
         soup = BeautifulSoup(course_response.text, 'lxml')
-        course_info_dict['name'] = soup.find('h1', {'class': 'title display-3-text'}).string
-        course_info_dict['lang'] = soup.find("div", attrs={"class": "rc-Language"}).contents[1]
-        course_info_dict['start_date'] = \
-            soup.find('div', {"class": "startdate rc-StartDateString caption-text"}).span.string
+        course_info_dict['name'] = soup.find('h1', {'class': 'title display-3-text'}).get_text()
+        course_info_dict['lang'] = soup.find('div', attrs={'class': 'rc-Language'}).contents[1]
+        start_date = \
+            soup.find('div', {'class': 'startdate rc-StartDateString caption-text'}).span.get_text()
         # course_info_dict['weeks_number'] = soup.find('td', {'class': 'td-data'}).string
+        # datetime.strptime(''.join(start_date.split()[:-3:-1]), "%d %b")
 
-        course_info_dict['weeks_number'] = soup.find("td", string="Выполнение").next_siblings("td")
+        aa = (start_date.split()[:-3:-1])
+        aa.append(str(datetime.now().year))
+        course_info_dict['start_date'] = aa
+        course_info_dict['start_date'] = datetime.strptime(' '.join(course_info_dict['start_date']), "%d %b %Y")
+
+        #     soup.find("i", {'class': 'cif-clock'}).find_parent('tr').find('td', string=True).get_text()
+
+        course_info_dict['duration'] = '{number} weeks'.format(number=len(soup.find_all('div', {'class': 'week'})))
+
         # half_scores = soup.find('div', {"class": "rc-CourseRatingIcons"}).\
         #     find_all('i','c-course-rating-icon cif-star-half-empty')
         # scores = soup.find('div', {"class": "rc-CourseRatingIcons"}).find_all('i', 'c-course-rating-icon cif-star')
