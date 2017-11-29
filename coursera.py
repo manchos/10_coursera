@@ -12,23 +12,14 @@ import requests_cache
 import sys
 import os
 import argparse
+from openpyxl import Workbook
 
 course_info_class = namedtuple('CourseInfo',
-                               ['name', 'url', 'lang', 'start_date', 'duration_in_weeks', 'rating'])
-
-# parser = etree.XMLParser(recover=True)
-# courses_list_xml = etree.parse(f, parser)
-# courses_list = [b.text for b in courses_list_xml.iter() if b.text.strip()]
-# courses_list = random.sample(courses_list, 20)
+                               ['name', 'url', 'lang', 'start_date', 'weeks_duration', 'rating'])
 
 
-def get_random_courses_url_list(courses_xml, tag='loc'):
-    soup = BeautifulSoup(courses_xml, 'lxml')
-    return random.sample([url.string for url in soup.find_all(tag, string=True)], 20)
-
-
-def get_courses_info_list(courses_url_list):
-    return [get_course_info(course_url) for course_url in courses_url_list]
+def utf8_encode(txt, encoding):
+    return bytes(txt, encoding).decode('utf-8')
 
 
 def get_courses_xml(url='https://www.coursera.org/sitemap~www~courses.xml'):
@@ -40,8 +31,17 @@ def get_courses_xml(url='https://www.coursera.org/sitemap~www~courses.xml'):
         return None
 
 
+def get_random_courses_url_list(courses_xml, tag='loc'):
+    soup = BeautifulSoup(courses_xml, 'lxml')
+    return random.sample([url.string for url in soup.find_all(tag, string=True)], 20)
+
+
+def get_courses_info_list(courses_url_list):
+    return [get_course_info(course_url) for course_url in courses_url_list]
+
+
 def get_course(course_url):
-    # headers = {'User-agent': 'Mozilla/5.0', 'Accept-Encoding': 'gzip', 'Connection': 'keep-alive',
+    # headers = {'User-agent': 'Mozilla/5.0', 'Accept-Encoding': 'gzip, deflate, br', 'Connection': 'keep-alive',
     #            'Accept-Language': 'ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3'}
     headers = {'Accept-Encoding': 'gzip, deflate, br', 'Accept-Language': 'ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3',
                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -51,15 +51,6 @@ def get_course(course_url):
         return requests.get(course_url, headers=headers)
     except ConnectionError:
         return None
-
-
-def utf8_encode(txt, encoding):
-    return bytes(txt, encoding).decode('utf-8')
-
-
-def get_open_repo_issues_list(repo_owner, repo_name):
-    repo_issues_dict = requests.get('https://api.github.com/repos/{}/{}/issues'.format(repo_owner, repo_name)).json()
-    return [repo_issue for repo_issue in repo_issues_dict if 'pull_request' not in repo_issue]
 
 
 def get_course_start_datetime(soup):
@@ -83,7 +74,7 @@ def get_course_start_datetime(soup):
 def get_course_rating_numeric_value(soup):
     try:
         rating_text = soup.find("div", "ratings-text bt3-hidden-xs").contents[1]
-        return re.findall(r'\d{1}.?\d?', rating_text)[0]
+        return re.findall(r'\d{1}[.]?\d?', rating_text)[0]
     except AttributeError:
         return None
 
@@ -97,19 +88,47 @@ def get_course_info(course_url='https://www.coursera.org/learn/gis-capstone'):
             url=course_url,
             lang=soup.find('div', attrs={'class': 'rc-Language'}).contents[1],
             start_date=get_course_start_datetime(soup),
-            duration_in_weeks='{number} weeks'.format(number=len(soup.find_all('div', {'class': 'week'}))),
-            rating=get_course_rating_numeric_value(soup)
-        )
+            weeks_duration='{number} weeks'.format(number=len(soup.find_all('div', {'class': 'week'}))),
+            rating=get_course_rating_numeric_value(soup))
         return course_info
 
 
-def output_courses_info_to_xlsx(filepath):
-    pass
+def output_courses_info_to_xlsx(courses_info_list):
+    xlsx_file = 'course_info.xlsx' if len(sys.argv) == 1 else sys.argv[1]
+    workbook = Workbook()
+    worksheet = workbook.active
+
+    worksheet.append([
+        'COURSE NAME', 'URL ADDRESS', 'LANGUAGE',
+        'START DATE', 'WEEKS DURATION', 'RATING',
+    ])
+    for course_info in courses_info_list:
+
+        table_row = []
+        table_row.append(course_info.name)
+        table_row.append(course_info.url)
+        table_row.append(course_info.lang)
+        if type(course_info.start_date) is datetime:
+            table_row.append('{:%d.%m.%Y}'.format(course_info.start_date))
+        else:
+            table_row.append(course_info.start_date)
+        table_row.append(course_info.weeks_duration)
+        if course_info.rating is None:
+            table_row.append('Not rated')
+        else:
+            table_row.append(course_info.rating)
+        worksheet.append(table_row)
+
+    workbook.save(xlsx_file)
+    print('Course info was loaded to {}'.format(xlsx_file))
+
+
+
 
 
 def set_cli_argument_parse():
     parser = argparse.ArgumentParser(description="Displays 20 the most popular repositories")
-    parser.add_argument("-cachetime", "--cache_time", default=1200, type=int,
+    parser.add_argument("-cachetime", "--cache_time", default=2400, type=int,
                         dest="cache_time", help="Set cache time interval")
     parser.add_argument('-clearcache', '--clear_cache', action='store_true', help='Clear cache file')
     return parser.parse_args()
