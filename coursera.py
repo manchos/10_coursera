@@ -101,33 +101,21 @@ def output_courses_info_to_xlsx(courses_info_list, xlsx_file='courses_info.xlsx'
     ])
 
     for course_info in courses_info_list:
-        table_row = []
-        table_row.append(course_info.name)
-        table_row.append(course_info.url)
-        table_row.append(course_info.lang)
-
+        table_row = [info for info in course_info]
         if type(course_info.start_date) is datetime:
-            table_row.append('{:%d.%m.%Y}'.format(course_info.start_date))
-        else:
-            table_row.append(course_info.start_date)
-
-        table_row.append(course_info.weeks_duration)
-
+            table_row[3] = '{:%d.%m.%Y}'.format(course_info.start_date)
         if course_info.rating is None:
-            table_row.append('Not rated')
-        else:
-            table_row.append(course_info.rating)
+            table_row[5] = 'Not rated'
 
         worksheet.append(table_row)
 
     # alignment
-    align_center = Alignment(horizontal='center', vertical='center', text_rotation=0,
-                             wrap_text=True, shrink_to_fit=True, indent=0)
     table_slice = 'A1:F{}'.format(len(courses_info_list)+1)
 
     for cell_obj in worksheet[table_slice]:
         for cell in cell_obj:
-            worksheet[cell.coordinate].alignment = align_center
+            worksheet[cell.coordinate].alignment = Alignment(horizontal='center', vertical='center', text_rotation=0,
+                                                             wrap_text=True, shrink_to_fit=True, indent=0)
 
     try:
         workbook.save(xlsx_file)
