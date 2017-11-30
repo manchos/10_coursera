@@ -1,12 +1,8 @@
 # Coursera Dump
 
-[TODO. There will be project description]
-
-# Project Goals
-
-
 Displays 20 random courses from https://www.coursera.org/ and output information to xlsx file.
 
+# Project Goals
 
 The code is written for educational purposes. Training course for web-developers - [DEVMAN.org](https://devman.org)
 
@@ -22,6 +18,7 @@ optional arguments:
   -h, --help            show this help message and exit
   -cachetime CACHE_TIME set cache time interval
   -clearcache           clear cache file
+  -f FILENAME           set xlsx file name to save (default='courses_info.xlsx')
 ```
 
 and save courses to xlsx file like this:
