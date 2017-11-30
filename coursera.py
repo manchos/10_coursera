@@ -90,6 +90,14 @@ def get_course_info(course_url='https://www.coursera.org/learn/gis-capstone'):
         return course_info
 
 
+def set_worksheet_style(worksheet, table_slice):
+    # alignment
+    for cell_obj in worksheet[table_slice]:
+        for cell in cell_obj:
+            worksheet[cell.coordinate].alignment = Alignment(horizontal='center', vertical='center', text_rotation=0,
+                                                             wrap_text=True, shrink_to_fit=True, indent=0)
+
+
 def output_courses_info_to_xlsx(courses_info_list, xlsx_file='courses_info.xlsx'):
 
     workbook = Workbook()
@@ -101,7 +109,7 @@ def output_courses_info_to_xlsx(courses_info_list, xlsx_file='courses_info.xlsx'
     ])
 
     for course_info in courses_info_list:
-        table_row = [info for info in course_info]
+        table_row = [info_value for info_value in course_info]
         if type(course_info.start_date) is datetime:
             table_row[3] = '{:%d.%m.%Y}'.format(course_info.start_date)
         if course_info.rating is None:
@@ -109,13 +117,8 @@ def output_courses_info_to_xlsx(courses_info_list, xlsx_file='courses_info.xlsx'
 
         worksheet.append(table_row)
 
-    # alignment
     table_slice = 'A1:F{}'.format(len(courses_info_list)+1)
-
-    for cell_obj in worksheet[table_slice]:
-        for cell in cell_obj:
-            worksheet[cell.coordinate].alignment = Alignment(horizontal='center', vertical='center', text_rotation=0,
-                                                             wrap_text=True, shrink_to_fit=True, indent=0)
+    set_worksheet_style(worksheet, table_slice)
 
     try:
         workbook.save(xlsx_file)
