@@ -119,10 +119,10 @@ def output_courses_info_to_xlsx(courses_info_list):
 
     # alignment
     align_center = Alignment(horizontal='center',
-                             vertical='bottom',
+                             vertical='center',
                              text_rotation=0,
-                             wrap_text=False,
-                             shrink_to_fit=False,
+                             wrap_text=True,
+                             shrink_to_fit=True,
                              indent=0)
     slice = 'A1:F{}'.format(len(courses_info_list)+1)
     for cellObj in worksheet[slice]:
