@@ -1,8 +1,4 @@
-from lxml import etree
-import lxml
-from io import StringIO, BytesIO
 from bs4 import BeautifulSoup
-from bs4 import Comment
 import requests
 import random
 from datetime import datetime
@@ -13,6 +9,7 @@ import sys
 import os
 import argparse
 from openpyxl import Workbook
+from openpyxl.styles import Alignment
 
 course_info_class = namedtuple('CourseInfo',
                                ['name', 'url', 'lang', 'start_date', 'weeks_duration', 'rating'])
@@ -41,8 +38,6 @@ def get_courses_info_list(courses_url_list):
 
 
 def get_course(course_url):
-    # headers = {'User-agent': 'Mozilla/5.0', 'Accept-Encoding': 'gzip, deflate, br', 'Connection': 'keep-alive',
-    #            'Accept-Language': 'ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3'}
     headers = {'Accept-Encoding': 'gzip, deflate, br', 'Accept-Language': 'ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3',
                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
                'User-agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:51.0) Gecko/20100101 Firefox/51.0',
@@ -81,20 +76,22 @@ def get_course_rating_numeric_value(soup):
 
 def get_course_info(course_url='https://www.coursera.org/learn/gis-capstone'):
     course_response = get_course(course_url)
-    if course_response:
+    if course_response is not None:
         soup = BeautifulSoup(utf8_encode(course_response.text, course_response.encoding), 'lxml')
+
         course_info = course_info_class(
             name=soup.find('h1', {'class': 'title display-3-text'}).get_text(),
             url=course_url,
             lang=soup.find('div', attrs={'class': 'rc-Language'}).contents[1],
             start_date=get_course_start_datetime(soup),
-            weeks_duration='{number} weeks'.format(number=len(soup.find_all('div', {'class': 'week'}))),
+            weeks_duration=len(soup.find_all('div', {'class': 'week'})),
             rating=get_course_rating_numeric_value(soup))
+
         return course_info
 
 
 def output_courses_info_to_xlsx(courses_info_list):
-    xlsx_file = 'course_info.xlsx' if len(sys.argv) == 1 else sys.argv[1]
+    xlsx_file = 'courses_info.xlsx' if len(sys.argv) == 1 else sys.argv[1]
     workbook = Workbook()
     worksheet = workbook.active
 
@@ -102,12 +99,13 @@ def output_courses_info_to_xlsx(courses_info_list):
         'COURSE NAME', 'URL ADDRESS', 'LANGUAGE',
         'START DATE', 'WEEKS DURATION', 'RATING',
     ])
-    for course_info in courses_info_list:
 
+    for course_info in courses_info_list:
         table_row = []
         table_row.append(course_info.name)
         table_row.append(course_info.url)
         table_row.append(course_info.lang)
+
         if type(course_info.start_date) is datetime:
             table_row.append('{:%d.%m.%Y}'.format(course_info.start_date))
         else:
@@ -119,11 +117,24 @@ def output_courses_info_to_xlsx(courses_info_list):
             table_row.append(course_info.rating)
         worksheet.append(table_row)
 
-    workbook.save(xlsx_file)
-    print('Course info was loaded to {}'.format(xlsx_file))
+    # alignment
+    align_center = Alignment(horizontal='center',
+                             vertical='bottom',
+                             text_rotation=0,
+                             wrap_text=False,
+                             shrink_to_fit=False,
+                             indent=0)
+    slice = 'A1:F{}'.format(len(courses_info_list)+1)
+    for cellObj in worksheet[slice]:
+        for cell in cellObj:
+            worksheet[cell.coordinate].alignment = align_center
 
-
-
+    try:
+        workbook.save(xlsx_file)
+    except (PermissionError, EnvironmentError) as exp:
+        print('Courses info did not loaded to {}. Check access to file. {}'.format(xlsx_file, exp))
+    else:
+        print('Course info was loaded to {}'.format(xlsx_file))
 
 
 def set_cli_argument_parse():
@@ -132,6 +143,7 @@ def set_cli_argument_parse():
                         dest="cache_time", help="Set cache time interval")
     parser.add_argument('-clearcache', '--clear_cache', action='store_true', help='Clear cache file')
     return parser.parse_args()
+
 
 if __name__ == '__main__':
     cli_argument_parser = set_cli_argument_parse()
@@ -147,42 +159,6 @@ if __name__ == '__main__':
     courses_xml = get_courses_xml()
     courses_list = get_random_courses_url_list(courses_xml)
     courses_info_list = get_courses_info_list(courses_list)
-    # print(get_courses_list())
 
-    print(courses_info_list )
-    # soup = BeautifulSoup(response.text, 'lxml')
-
-    # courses_xml = get_courses_xml()
-    # print(get_random_courses_list(courses_xml))
-
-    # get_course_info()
-
-
-    # print(response.encoding)
-    # print(response.status_code)  # Код ответа
-    # print(response.headers) # Заголовки ответа
-
-    # course_url = 'https://www.coursera.org/learn/gis-capstone'
-    # course_response = get_course('https://www.coursera.org/learn/assembling-genomes')
-    # soup = BeautifulSoup(utf8_encode(course_response.text, course_response.encoding), 'lxml')
-    # aa = get_course('https://www.coursera.org/learn/assembling-genomes')
-    # print(get_course_info('https://www.coursera.org/learn/gis-capstone'))
-
-
-
-
-    # aa = [i for i in soup.root]
-    # get_random_courses_list
-    # courses_url_list = soup.find_all('loc', string=True)
-
-    # courses_url_list = [url.string for url in soup.find_all('loc', string=True)]
-
-    # title = soup.select('div.title.display-3-text')[0]
-    # title1 = soup.find('div', {'class': 'title display-3-text'})
-    # start = soup.find_all(attrs={"data-reactid": "82"})[0]
-    # weeks_number = soup.find_all(attrs={"data-reactid": "211"})[0]
-    # #data-reactid="211"
-    # print(start.text)
-    # print(weeks_number.text)
-    # # datetime.strptime(start.text[],"%b %d")
+    output_courses_info_to_xlsx(courses_info_list)
 
