@@ -28,9 +28,9 @@ def get_courses_xml(url='https://www.coursera.org/sitemap~www~courses.xml'):
         return None
 
 
-def get_random_courses_url_list(courses_xml, tag='loc'):
+def get_random_courses_url_list(courses_xml, tag='loc', courses_limit=20):
     soup = BeautifulSoup(courses_xml, 'lxml')
-    return random.sample([url.string for url in soup.find_all(tag, string=True)], 20)
+    return random.sample([url.string for url in soup.find_all(tag, string=True)], courses_limit)
 
 
 def get_courses_info_list(courses_url_list):
@@ -90,41 +90,45 @@ def get_course_info(course_url='https://www.coursera.org/learn/gis-capstone'):
         return course_info
 
 
-def output_courses_info_to_xlsx(courses_info_list):
-    xlsx_file = 'courses_info.xlsx' if len(sys.argv) == 1 else sys.argv[1]
+def output_courses_info_to_xlsx(courses_info_list, xlsx_file='courses_info.xlsx'):
+
     workbook = Workbook()
     worksheet = workbook.active
+
     worksheet.append([
         'COURSE NAME', 'URL ADDRESS', 'LANGUAGE',
         'START DATE', 'WEEKS DURATION', 'RATING',
     ])
+
     for course_info in courses_info_list:
         table_row = []
         table_row.append(course_info.name)
         table_row.append(course_info.url)
         table_row.append(course_info.lang)
+
         if type(course_info.start_date) is datetime:
             table_row.append('{:%d.%m.%Y}'.format(course_info.start_date))
         else:
             table_row.append(course_info.start_date)
+
         table_row.append(course_info.weeks_duration)
+
         if course_info.rating is None:
             table_row.append('Not rated')
         else:
             table_row.append(course_info.rating)
+
         worksheet.append(table_row)
 
     # alignment
-    align_center = Alignment(horizontal='center',
-                             vertical='center',
-                             text_rotation=0,
-                             wrap_text=True,
-                             shrink_to_fit=True,
-                             indent=0)
+    align_center = Alignment(horizontal='center', vertical='center', text_rotation=0,
+                             wrap_text=True, shrink_to_fit=True, indent=0)
     table_slice = 'A1:F{}'.format(len(courses_info_list)+1)
+
     for cell_obj in worksheet[table_slice]:
         for cell in cell_obj:
             worksheet[cell.coordinate].alignment = align_center
+
     try:
         workbook.save(xlsx_file)
     except (PermissionError, EnvironmentError) as exp:
