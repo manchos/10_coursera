@@ -5,7 +5,6 @@ from datetime import datetime
 from collections import namedtuple
 import re
 import requests_cache
-import sys
 import os
 import argparse
 from openpyxl import Workbook
@@ -117,8 +116,7 @@ def output_courses_info_to_xlsx(courses_info_list, xlsx_file='courses_info.xlsx'
 
         worksheet.append(table_row)
 
-    table_slice = 'A1:F{}'.format(len(courses_info_list)+1)
-    set_worksheet_style(worksheet, table_slice)
+    set_worksheet_style(worksheet, 'A1:F{}'.format(len(courses_info_list)+1))
 
     try:
         workbook.save(xlsx_file)
@@ -129,10 +127,11 @@ def output_courses_info_to_xlsx(courses_info_list, xlsx_file='courses_info.xlsx'
 
 
 def set_cli_argument_parse():
-    parser = argparse.ArgumentParser(description="Displays 20 the most popular repositories")
+    parser = argparse.ArgumentParser(description="Displays information about 20 random curses from coursera.org")
     parser.add_argument("-cachetime", "--cache_time", default=2400, type=int,
                         dest="cache_time", help="Set cache time interval")
     parser.add_argument('-clearcache', '--clear_cache', action='store_true', help='Clear cache file')
+    parser.add_argument('-f', '--filename', default='courses_info.xlsx', dest="filename", help='set xlsx file name to save')
     return parser.parse_args()
 
 
@@ -151,5 +150,4 @@ if __name__ == '__main__':
     courses_list = get_random_courses_url_list(courses_xml)
     courses_info_list = get_courses_info_list(courses_list)
 
-    output_courses_info_to_xlsx(courses_info_list)
-
+    output_courses_info_to_xlsx(courses_info_list, cli_argument_parser.filename)
