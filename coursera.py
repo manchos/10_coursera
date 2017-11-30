@@ -94,18 +94,15 @@ def output_courses_info_to_xlsx(courses_info_list):
     xlsx_file = 'courses_info.xlsx' if len(sys.argv) == 1 else sys.argv[1]
     workbook = Workbook()
     worksheet = workbook.active
-
     worksheet.append([
         'COURSE NAME', 'URL ADDRESS', 'LANGUAGE',
         'START DATE', 'WEEKS DURATION', 'RATING',
     ])
-
     for course_info in courses_info_list:
         table_row = []
         table_row.append(course_info.name)
         table_row.append(course_info.url)
         table_row.append(course_info.lang)
-
         if type(course_info.start_date) is datetime:
             table_row.append('{:%d.%m.%Y}'.format(course_info.start_date))
         else:
@@ -119,16 +116,15 @@ def output_courses_info_to_xlsx(courses_info_list):
 
     # alignment
     align_center = Alignment(horizontal='center',
-                             vertical='bottom',
+                             vertical='center',
                              text_rotation=0,
-                             wrap_text=False,
-                             shrink_to_fit=False,
+                             wrap_text=True,
+                             shrink_to_fit=True,
                              indent=0)
-    slice = 'A1:F{}'.format(len(courses_info_list)+1)
-    for cellObj in worksheet[slice]:
-        for cell in cellObj:
+    table_slice = 'A1:F{}'.format(len(courses_info_list)+1)
+    for cell_obj in worksheet[table_slice]:
+        for cell in cell_obj:
             worksheet[cell.coordinate].alignment = align_center
-
     try:
         workbook.save(xlsx_file)
     except (PermissionError, EnvironmentError) as exp:
