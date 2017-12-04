@@ -124,9 +124,9 @@ def output_courses_info_to_xlsx(courses_info_list, xlsx_file='courses_info.xlsx'
     try:
         workbook.save(xlsx_file)
     except (PermissionError, EnvironmentError) as exp:
-        logging.error('course information did not loaded to {}. Check access to file. {}'.format(xlsx_file, exp))
+        logging.error('Course information did not loaded to {}. Check access to file. {}'.format(xlsx_file, exp))
     else:
-        logging.info('course information was loaded to {}'.format(xlsx_file))
+        logging.info('Course information was loaded to {}'.format(xlsx_file))
 
 
 def set_cli_argument_parse():
