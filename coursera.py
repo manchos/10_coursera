@@ -9,6 +9,8 @@ import os
 import argparse
 from openpyxl import Workbook
 from openpyxl.styles import Alignment
+import logging
+logging.basicConfig(level=logging.INFO)
 
 course_info_class = namedtuple('CourseInfo',
                                ['name', 'url', 'lang', 'start_date', 'weeks_duration', 'rating'])
@@ -23,7 +25,7 @@ def get_courses_xml(url='https://www.coursera.org/sitemap~www~courses.xml'):
     try:
         return requests.get(url, headers=headers).text
     except (ConnectionError, requests.exceptions.ConnectionError) as exc:
-        print(exc)
+        logging.error(exc)
         return None
 
 
@@ -43,7 +45,8 @@ def get_course(course_url):
                'Connection': 'keep-alive'}
     try:
         return requests.get(course_url, headers=headers)
-    except ConnectionError:
+    except ConnectionError as exc:
+        logging.error(exc)
         return None
 
 
@@ -121,9 +124,9 @@ def output_courses_info_to_xlsx(courses_info_list, xlsx_file='courses_info.xlsx'
     try:
         workbook.save(xlsx_file)
     except (PermissionError, EnvironmentError) as exp:
-        print('Courses info did not loaded to {}. Check access to file. {}'.format(xlsx_file, exp))
+        logging.error('course information did not loaded to {}. Check access to file. {}'.format(xlsx_file, exp))
     else:
-        print('Course info was loaded to {}'.format(xlsx_file))
+        logging.info('course information was loaded to {}'.format(xlsx_file))
 
 
 def set_cli_argument_parse():
